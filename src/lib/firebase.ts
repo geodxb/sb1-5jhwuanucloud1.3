@@ -2,22 +2,29 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  // These will be set via environment variables
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyDb2i4UdzhB6ChT30ljwRXSIjBM8LMT318",
+  authDomain: "blackbull-4b009.firebaseapp.com",
+  projectId: "blackbull-4b009",
+  storageBucket: "blackbull-4b009.firebasestorage.app",
+  messagingSenderId: "600574134239",
+  appId: "1:600574134239:web:377484c5db15edf320a66a",
+  measurementId: "G-PS64KEQB6T"
 };
 
 console.log('🔥 Firebase Config:', {
-  apiKey: firebaseConfig.apiKey ? '✅ Set' : '❌ Missing',
-  authDomain: firebaseConfig.authDomain ? '✅ Set' : '❌ Missing',
-  projectId: firebaseConfig.projectId ? '✅ Set' : '❌ Missing',
-  storageBucket: firebaseConfig.storageBucket ? '✅ Set' : '❌ Missing',
-  messagingSenderId: firebaseConfig.messagingSenderId ? '✅ Set' : '❌ Missing',
-  appId: firebaseConfig.appId ? '✅ Set' : '❌ Missing'
+  apiKey: '✅ Set',
+  authDomain: '✅ Set',
+  projectId: '✅ Set',
+  storageBucket: '✅ Set',
+  messagingSenderId: '✅ Set',
+  appId: '✅ Set',
+  measurementId: '✅ Set'
+});
+
+console.log('🌍 Environment:', {
+  isDev: import.meta.env.DEV,
+  mode: import.meta.env.MODE,
+  prod: import.meta.env.PROD
 });
 
 const app = initializeApp(firebaseConfig);
