@@ -42,58 +42,50 @@ function App() {
 
   // Check if there's an active request under review
   const checkActiveDocument = async (docId: string) => {
+    console.log('Starting checkActiveDocument...');
     try {
-      // First, always check for any pending or approved requests regardless of docId
-      const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
+      // Check if we have a saved document ID first
+      const savedDocId = localStorage.getItem('dfsa_document_id');
+      console.log('Saved document ID:', savedDocId);
       
-      // Check for pending requests
-      const pendingQuery = query(
-        collection(db, 'client_categorizations'),
-        where('status', '==', 'pending'),
-        orderBy('createdAt', 'desc'),
-        limit(1)
-      );
-      
-      const pendingSnapshot = await getDocs(pendingQuery);
-      if (!pendingSnapshot.empty) {
-        const pendingDoc = pendingSnapshot.docs[0];
-        const pendingData = pendingDoc.data();
+      if (savedDocId) {
+        const docRef = doc(db, 'client_categorizations', savedDocId);
+        const docSnap = await getDoc(docRef);
         
-        // Found a pending request, use it
-        console.log('Found pending request:', pendingDoc.id);
-        setDocumentId(pendingDoc.id);
-        setRegistrationData(pendingData.registrationData || {});
-        setHasActiveDocument(true);
-        setIsDocumentApproved(false);
-        setIsCheckingDocument(false);
-        return true;
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const status = data.status;
+          console.log('Document status:', status);
+          
+          // Only consider it active if status is pending or approved (not payed)
+          if (status === 'pending' || status === 'approved') {
+            console.log(`Found saved ${status} request:`, savedDocId);
+            setDocumentId(savedDocId);
+            setRegistrationData(data.registrationData || {});
+            setHasActiveDocument(true);
+            setIsDocumentApproved(status === 'approved');
+            setIsCheckingDocument(false);
+            return true;
+          } else {
+            // Document is payed or rejected, clear it
+            console.log(`Saved document is ${status}, clearing...`);
+            localStorage.removeItem('dfsa_document_id');
+            localStorage.removeItem('dfsa_registration_data');
+            setHasActiveDocument(false);
+            setIsCheckingDocument(false);
+          }
+        } else {
+          // Document doesn't exist, clear it
+          console.log('Saved document not found, clearing...');
+          localStorage.removeItem('dfsa_document_id');
+          localStorage.removeItem('dfsa_registration_data');
+          setHasActiveDocument(false);
+          setIsCheckingDocument(false);
+        }
       }
       
-      // Check for approved requests (not yet paid)
-      const approvedQuery = query(
-        collection(db, 'client_categorizations'),
-        where('status', '==', 'approved'),
-        orderBy('createdAt', 'desc'),
-        limit(1)
-      );
-      
-      const approvedSnapshot = await getDocs(approvedQuery);
-      if (!approvedSnapshot.empty) {
-        const approvedDoc = approvedSnapshot.docs[0];
-        const approvedData = approvedDoc.data();
-        
-        // Found an approved request, use it
-        console.log('Found approved request:', approvedDoc.id);
-        setDocumentId(approvedDoc.id);
-        setRegistrationData(approvedData.registrationData || {});
-        setHasActiveDocument(true);
-        setIsDocumentApproved(true);
-        setIsCheckingDocument(false);
-        return true;
-      }
-      
-      // No pending or approved requests found, allow new submissions
-      console.log('No pending or approved requests found');
+      // No active document found
+      console.log('No active document found');
       setHasActiveDocument(false);
       setIsCheckingDocument(false);
       return false;
@@ -103,7 +95,6 @@ function App() {
       setIsCheckingDocument(false);
       return false;
     }
-
   };
 
   // Initialize current step based on saved data
@@ -112,21 +103,28 @@ function App() {
       console.log('Initializing app...');
       setIsCheckingDocument(true);
       
-      // Always check for active requests
-      const isActive = await checkActiveDocument('');
-      console.log('Is active document found:', isActive);
-      
-      if (isActive) {
-        // Force user to approval step if request is under review
-        console.log('Setting current step to approval');
-        setCurrentStep('approval');
-      } else {
-        // No active request, start fresh
-        console.log('No active request, starting fresh');
-        localStorage.removeItem('dfsa_document_id');
-        localStorage.removeItem('dfsa_registration_data');
-        setRegistrationData({});
-        setDocumentId('');
+      try {
+        // Always check for active requests
+        const isActive = await checkActiveDocument('');
+        console.log('Is active document found:', isActive);
+        
+        if (isActive) {
+          // Force user to approval step if request is under review
+          console.log('Setting current step to approval');
+          setCurrentStep('approval');
+        } else {
+          // No active request, start fresh
+          console.log('No active request, starting fresh');
+          localStorage.removeItem('dfsa_document_id');
+          localStorage.removeItem('dfsa_registration_data');
+          setRegistrationData({});
+          setDocumentId('');
+          setCurrentStep('broker');
+        }
+      } catch (error) {
+        console.error('Error in initializeApp:', error);
+        setIsCheckingDocument(false);
+        setHasActiveDocument(false);
         setCurrentStep('broker');
       }
     };
