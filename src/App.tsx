@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { db } from './lib/firebase';
 import { 
   BrokerSelectionForm, 
@@ -42,24 +42,32 @@ function App() {
 
   // Check if there's an active request under review
   const checkActiveDocument = async (docId: string) => {
-    console.log('Starting checkActiveDocument...');
+    console.log('🔍 Starting checkActiveDocument...');
+    console.log('🔥 Firebase db instance:', db);
+    
     try {
       // Check if we have a saved document ID first
       const savedDocId = localStorage.getItem('dfsa_document_id');
-      console.log('Saved document ID:', savedDocId);
+      console.log('💾 Saved document ID:', savedDocId);
       
       if (savedDocId) {
+        console.log('📄 Attempting to fetch document from Firestore...');
         const docRef = doc(db, 'client_categorizations', savedDocId);
+        console.log('📋 Document reference created:', docRef);
+        
         const docSnap = await getDoc(docRef);
+        console.log('📊 Document snapshot received:', docSnap);
+        console.log('📊 Document exists:', docSnap.exists());
         
         if (docSnap.exists()) {
           const data = docSnap.data();
+          console.log('📋 Document data:', data);
           const status = data.status;
-          console.log('Document status:', status);
+          console.log('🎯 Document status:', status);
           
           // Only consider it active if status is pending or approved (not payed)
           if (status === 'pending' || status === 'approved') {
-            console.log(`Found saved ${status} request:`, savedDocId);
+            console.log(`✅ Found saved ${status} request:`, savedDocId);
             setDocumentId(savedDocId);
             setRegistrationData(data.registrationData || {});
             setHasActiveDocument(true);
@@ -68,7 +76,7 @@ function App() {
             return true;
           } else {
             // Document is payed or rejected, clear it
-            console.log(`Saved document is ${status}, clearing...`);
+            console.log(`🧹 Saved document is ${status}, clearing...`);
             localStorage.removeItem('dfsa_document_id');
             localStorage.removeItem('dfsa_registration_data');
             setHasActiveDocument(false);
@@ -76,7 +84,7 @@ function App() {
           }
         } else {
           // Document doesn't exist, clear it
-          console.log('Saved document not found, clearing...');
+          console.log('❌ Saved document not found, clearing...');
           localStorage.removeItem('dfsa_document_id');
           localStorage.removeItem('dfsa_registration_data');
           setHasActiveDocument(false);
@@ -85,12 +93,12 @@ function App() {
       }
       
       // No active document found
-      console.log('No active document found');
+      console.log('🚫 No active document found');
       setHasActiveDocument(false);
       setIsCheckingDocument(false);
       return false;
     } catch (error) {
-      console.error('Error checking for active requests:', error);
+      console.error('❌ Error checking for active requests:', error);
       setHasActiveDocument(false);
       setIsCheckingDocument(false);
       return false;
@@ -100,21 +108,21 @@ function App() {
   // Initialize current step based on saved data
   useEffect(() => {
     const initializeApp = async () => {
-      console.log('Initializing app...');
+      console.log('🚀 Initializing app...');
       setIsCheckingDocument(true);
       
       try {
         // Always check for active requests
         const isActive = await checkActiveDocument('');
-        console.log('Is active document found:', isActive);
+        console.log('🎯 Is active document found:', isActive);
         
         if (isActive) {
           // Force user to approval step if request is under review
-          console.log('Setting current step to approval');
+          console.log('📋 Setting current step to approval');
           setCurrentStep('approval');
         } else {
           // No active request, start fresh
-          console.log('No active request, starting fresh');
+          console.log('🆕 No active request, starting fresh');
           localStorage.removeItem('dfsa_document_id');
           localStorage.removeItem('dfsa_registration_data');
           setRegistrationData({});
@@ -122,7 +130,7 @@ function App() {
           setCurrentStep('broker');
         }
       } catch (error) {
-        console.error('Error in initializeApp:', error);
+        console.error('❌ Error in initializeApp:', error);
         setIsCheckingDocument(false);
         setHasActiveDocument(false);
         setCurrentStep('broker');
