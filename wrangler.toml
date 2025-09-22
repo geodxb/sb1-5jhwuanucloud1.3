@@ -1,0 +1,5 @@
+name = "dfsa-payment-gateway"
+compatibility_date = "2025-09-22"
+
+[assets]
+directory = "./dist"
